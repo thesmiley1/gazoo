@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from pathlib import Path, PurePath
+from pathlib import Path
 from shutil import rmtree
 from typing import Final, Optional, Type
 
@@ -87,5 +87,5 @@ class Util:
         return cls._temp_dir_path
 
     @classmethod
-    def worlds_dir_path(cls: 'Type[Util]') -> PurePath:
+    def worlds_dir_path(cls: 'Type[Util]') -> Path:
         return Path.cwd().joinpath(cls._WORLDS_DIR_NAME)

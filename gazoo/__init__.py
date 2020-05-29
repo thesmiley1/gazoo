@@ -13,11 +13,12 @@ def main() -> None:
     config: Config = Util.read_config()
 
     basic_config(
+        datefmt='%Y-%m-%d %H:%M:%S',
         format=f'[%(asctime)s %(levelname)s] [{LOGGING_TAG}] %(message)s',
         level=(DEBUG if config.debug else WARNING),
     )
 
-    debug(config)
+    debug(config.config)
 
     Wrapper(config).run()
 
