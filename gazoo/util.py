@@ -9,11 +9,13 @@ from gazoo.config import Config
 class Util:
     _BASE_DIR_NAME: Final[str] = 'gazoo'
     _CONFIG_FILE_NAME: Final[str] = 'gazoo.cfg'
+    _SAVES_DIR_NAME: Final[str] = 'saves'
     _TEMP_DIR_NAME: Final[str] = '.tmp'
     _WORLDS_DIR_NAME: Final[str] = 'worlds'
 
     _base_dir_path: Optional[Path] = None
     _config_file_path: Optional[Path] = None
+    _saves_dir_path: Optional[Path] = None
     _temp_dir_path: Optional[Path] = None
     _worlds_dir_path: Optional[Path] = None
 
@@ -47,9 +49,14 @@ class Util:
             config_file.write(Config.DEFAULTS_STRING)
 
     @classmethod
+    def ensure_saves_dir(cls: 'Type[Util]') -> None:
+        cls.saves_dir_path().mkdir(exist_ok=True)
+
+    @classmethod
     def ensure_setup(cls: 'Type[Util]') -> None:
         cls.ensure_base_dir()
         cls.ensure_config_file()
+        cls.ensure_saves_dir()
         cls.ensure_temp_dir()
 
     @classmethod
@@ -77,6 +84,14 @@ class Util:
         config.read_string(config_string)
 
         return Config(config)
+
+    @classmethod
+    def saves_dir_path(cls: 'Type[Util]') -> Path:
+        if cls._saves_dir_path is None:
+            cls._saves_dir_path = cls.base_dir_path().joinpath(
+                cls._SAVES_DIR_NAME)
+
+        return cls._saves_dir_path
 
     @classmethod
     def temp_dir_path(cls: 'Type[Util]') -> Path:
