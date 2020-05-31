@@ -24,9 +24,7 @@ class Saver:
         if self.status is not SaveStatus.IDLE:
             return
 
-        self.status = SaveStatus.HOLD
         self.command('save hold')
-
         self.status = SaveStatus.QUERY
 
         while self.status is not SaveStatus.READY:
