@@ -4,9 +4,8 @@ from signal import SIGINT, signal
 from subprocess import PIPE, Popen
 from sys import stderr, stdin
 from threading import Thread, Timer
-from time import sleep
 from types import FrameType
-from typing import Dict, Final, List, Optional, Tuple, Type
+from typing import Dict, Final, Optional, Type # pylint: disable=unused-import
 
 from gazoo.config import Config
 from gazoo.save_status import SaveStatus
@@ -23,7 +22,7 @@ class Wrapper:
 
     def __init__(self: 'Wrapper', config: Config) -> None:
         self.config = config
-        self.proc: Optional[Popen] = None
+        self.proc: 'Optional[Popen[str]]' = None
         self.saver: Optional[Saver] = None
         self.threads: Dict[str, Thread] = {}
         self.timers: Dict[str, Timer] = {}
@@ -66,6 +65,8 @@ class Wrapper:
             self.timers['cur_save'].join()
 
     def signal_sigint(self: 'Wrapper', signum: int, frame: FrameType) -> None:
+        # pylint: disable=unused-argument
+
         assert self.proc is not None
 
         self.proc.terminate()

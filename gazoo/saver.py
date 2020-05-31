@@ -1,10 +1,9 @@
-from logging import critical, debug, error, info
-from os import name as os_name
+from logging import debug, error, info
 from pathlib import Path
-from shutil import copyfile, get_archive_formats
-from subprocess import Popen
+from shutil import copyfile
+from subprocess import Popen # pylint: disable=unused-import
 from time import sleep
-from typing import Final, List, Optional, Tuple, Type
+from typing import Final, List, Optional, Tuple
 from zipfile import ZipFile
 from datetime import datetime
 
@@ -15,41 +14,13 @@ from gazoo.util import Util
 class Saver:
     QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be copied.'
                                 + '\n')
-    ARCHIVE_PREFERENCE: Final[List[str]] = [
-        'xztar',
-        'bztar',
-        'gztar',
-        'tar',
-    ]
 
-    _archive_format: str = ''
-    # FIXME want this ???
-
-    @classmethod
-    def archive_format(cls: 'Type[Saver]') -> str:
-        if cls._archive_format == '':
-            preferences: List[str] = cls.ARCHIVE_PREFERENCE
-            if os_name == 'posix':
-                preferences.append('zip')
-            else:
-                preferences.insert(0, 'zip')
-
-            for fmt in preferences:
-                if fmt in get_archive_formats():
-                    cls._archive_format = fmt
-                    break
-
-        if cls._archive_format == '':
-            critical('Failed to determine archive format')
-
-        return cls._archive_format
-
-    def __init__(self: 'Saver', proc: Popen) -> None:
+    def __init__(self: 'Saver', proc: 'Popen[str]') -> None:
         self.info: List[Tuple[Path, int]] = []
-        self.proc: Popen = proc
+        self.proc: 'Popen[str]' = proc
         self.status: SaveStatus = SaveStatus.IDLE
 
-    def run(self: 'Saver'):
+    def run(self: 'Saver') -> None:
         if self.status is not SaveStatus.IDLE:
             return
 
@@ -82,7 +53,7 @@ class Saver:
             print(string)
             self.proc.stdin.write(string + '\n')
 
-    def save(self: 'Saver'):
+    def save(self: 'Saver') -> None:
         Util.ensure_temp_dir()
 
         world_dir_name: str = ''
@@ -120,7 +91,7 @@ class Saver:
             with dst.open('w') as dst_file:
                 dst_file.truncate(length)
 
-        datetime_string = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         zip_file_name = f'{world_dir_name} {datetime_string}.zip'
 
         # zip tmp/world

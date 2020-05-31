@@ -1,4 +1,8 @@
-from logging import DEBUG, WARNING, debug
+"""
+    Module gazoo wraps Minecraft bedrock server for proper saving.
+"""
+
+from logging import DEBUG
 from logging import basicConfig as basic_config
 from typing import Final
 
@@ -6,19 +10,21 @@ from gazoo.config import Config
 from gazoo.wrapper import Wrapper
 from gazoo.util import Util
 
-LOGGING_TAG: Final[str] = 'gazoo'
+_LOGGING_TAG: Final[str] = 'gazoo'
 
 
 def main() -> None:
+    """
+    Function main runs the module as an application.
+    """
+
     config: Config = Util.read_config()
 
     basic_config(
         datefmt='%Y-%m-%d %H:%M:%S',
-        format=f'[%(asctime)s %(levelname)s] [{LOGGING_TAG}] %(message)s',
-        level=(DEBUG if config.debug else WARNING),
+        format=f'[%(asctime)s %(levelname)s] [{_LOGGING_TAG}] %(message)s',
+        level=(DEBUG if config.debug else None),
     )
-
-    debug(config.config)
 
     Wrapper(config).run()
 

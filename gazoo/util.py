@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from pathlib import Path
 from shutil import rmtree
-from typing import Final, Optional, Type
+from typing import Final, Optional, Type # pylint: disable=unused-import
 
 from gazoo.config import Config
 
