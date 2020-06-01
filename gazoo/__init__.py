@@ -1,5 +1,5 @@
 """
-    Module gazoo wraps Minecraft bedrock server for proper saving.
+    Gazoo wraps Minecraft bedrock server for making proper backups.
 """
 
 from logging import DEBUG

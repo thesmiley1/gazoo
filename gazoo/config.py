@@ -1,5 +1,5 @@
 """
-Module config provides class Config.
+Provides class Config
 """
 
 from configparser import DEFAULTSECT, ConfigParser
@@ -8,7 +8,7 @@ from typing import Final, Type # pylint: disable=unused-import
 
 class Config:
     """
-    Class Config provides convenient access to configuration.
+    Provides convenient access to configuration
 
     It wraps ConfigParser from the standard library to provide
     convenience properties that return values of the appropriate type.

@@ -1,3 +1,7 @@
+"""
+Module util provides class Util.
+"""
+
 from configparser import ConfigParser
 from pathlib import Path
 from shutil import rmtree
@@ -7,6 +11,10 @@ from gazoo.config import Config
 
 
 class Util:
+    """
+    Class Util provides misc functions for fs paths, config, setup, etc.
+    """
+
     _BASE_DIR_NAME: Final[str] = 'gazoo'
     _CONFIG_FILE_NAME: Final[str] = 'gazoo.cfg'
     _SAVES_DIR_NAME: Final[str] = 'saves'
@@ -21,6 +29,10 @@ class Util:
 
     @classmethod
     def base_dir_path(cls: 'Type[Util]') -> Path:
+        """
+        Get path to the base directory for application data.
+        """
+
         if cls._base_dir_path is None:
             cls._base_dir_path = Path.cwd().joinpath(cls._BASE_DIR_NAME)
 
@@ -28,6 +40,10 @@ class Util:
 
     @classmethod
     def config_file_path(cls: 'Type[Util]') -> Path:
+        """
+        Get the path to the application configuration file.
+        """
+
         if cls._config_file_path is None:
             cls._config_file_path = cls.base_dir_path().joinpath(
                 cls._CONFIG_FILE_NAME)
@@ -36,10 +52,20 @@ class Util:
 
     @classmethod
     def ensure_base_dir(cls: 'Type[Util]') -> None:
+        """
+        Ensure the base directory for application data exists.
+        """
+
         cls.base_dir_path().mkdir(exist_ok=True)
 
     @classmethod
     def ensure_config_file(cls: 'Type[Util]') -> None:
+        """
+        Ensure the application configuration file exists.
+
+        If it does not, write a file with default values.
+        """
+
         if cls.config_file_path().is_file():
             return
 
