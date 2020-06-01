@@ -7,43 +7,39 @@ from typing import Final, List, Optional, Tuple
 from zipfile import ZipFile
 from datetime import datetime
 
-from gazoo.save_status import SaveStatus
+from gazoo.worker_status import WorkerStatus
 from gazoo.util import Util
 
 
-class Saver:
+class Worker:
     QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be copied.'
                                 + '\n')
 
-    def __init__(self: 'Saver', proc: 'Popen[str]') -> None:
+    def __init__(self: 'Worker', proc: 'Popen[str]') -> None:
         self.info: List[Tuple[Path, int]] = []
         self.proc: 'Popen[str]' = proc
-        self.status: SaveStatus = SaveStatus.IDLE
+        self.status: WorkerStatus = WorkerStatus.IDLE
 
-    def run(self: 'Saver') -> None:
-        if self.status is not SaveStatus.IDLE:
+    def backup(self: 'Worker') -> None:
+        if self.status is not WorkerStatus.IDLE:
             return
 
         self.command('save hold')
-        self.status = SaveStatus.QUERY
+        self.status = WorkerStatus.QUERY
 
-        while self.status is not SaveStatus.READY:
+        while self.status is not WorkerStatus.READY:
             self.command('save query')
             sleep(1)
 
         for loc, length in self.info:
             debug(f'{loc}: {length}')
 
-        self.save()
-
-        for i in range(5):
-            sleep(1)
-            info(i)
+        self.copy_files()
 
         self.command('save resume')
-        self.status = SaveStatus.IDLE
+        self.status = WorkerStatus.IDLE
 
-    def command(self: 'Saver', string: str) -> None:
+    def command(self: 'Worker', string: str) -> None:
         assert self.proc is not None
         assert self.proc.stdin is not None
 
@@ -51,7 +47,7 @@ class Saver:
             print(string)
             self.proc.stdin.write(string + '\n')
 
-    def save(self: 'Saver') -> None:
+    def copy_files(self: 'Worker') -> None:
         Util.ensure_temp_dir()
 
         world_dir_name: str = ''
@@ -110,14 +106,14 @@ class Saver:
         final_dst = Util.saves_dir_path().joinpath(zip_file_name)
         copyfile(zip_file_path, final_dst)
 
-    def thread_stdout(self: 'Saver') -> None:
+    def thread_stdout(self: 'Worker') -> None:
         assert self.proc is not None
         assert self.proc.stdout is not None
 
         line: str
         for line in self.proc.stdout:
             print(line, end='')
-            if self.status is SaveStatus.INFO:
+            if self.status is WorkerStatus.INFO:
                 files: List[str] = line.rstrip().split(', ')
 
                 self.info = []
@@ -126,8 +122,8 @@ class Saver:
                     (loc, length) = file.split(':')
                     self.info.append((Path(loc), int(length)))
 
-                self.status = SaveStatus.READY
+                self.status = WorkerStatus.READY
 
-            if (self.status is SaveStatus.QUERY
+            if (self.status is WorkerStatus.QUERY
                     and line == self.QUERY_STRING):
-                self.status = SaveStatus.INFO
+                self.status = WorkerStatus.INFO

@@ -1,15 +1,13 @@
 """
-Module save_status provides class SaveStatus.
+Module worker_status provides class WorkerStatus.
 """
-
-# FIXME should we be calling this backup instead of save ???
 
 from enum import Enum, auto
 
 
-class SaveStatus(Enum):
+class WorkerStatus(Enum):
     """
-    Class SaveStatus provides constants to track the status of saving.
+    Class WorkerStatus provides constants to track worker status.
 
     These roughly correspond to the server commands used for saving and
     the time in between them.  For reference, the three saving commands

@@ -5,12 +5,12 @@ from subprocess import PIPE, Popen
 from sys import stderr, stdin
 from threading import Thread, Timer
 from types import FrameType
-from typing import Dict, Final, Optional, Type # pylint: disable=unused-import
+from typing import Dict, Final, Optional, Type  # pylint: disable=unused-import
 
 from gazoo.config import Config
-from gazoo.save_status import SaveStatus
-from gazoo.saver import Saver
+from gazoo.worker import Worker
 from gazoo.util import Util
+from gazoo.worker_status import WorkerStatus
 
 
 class Wrapper:
@@ -23,7 +23,7 @@ class Wrapper:
     def __init__(self: 'Wrapper', config: Config) -> None:
         self.config = config
         self.proc: 'Optional[Popen[str]]' = None
-        self.saver: Optional[Saver] = None
+        self.worker: Optional[Worker] = None
         self.threads: Dict[str, Thread] = {}
         self.timers: Dict[str, Timer] = {}
 
@@ -33,7 +33,7 @@ class Wrapper:
         self.proc = Popen([self.server_bin_path()], bufsize=1,
                           stderr=PIPE, stdin=PIPE, stdout=PIPE, text=True)
 
-        self.saver = Saver(self.proc)
+        self.worker = Worker(self.proc)
 
         self.timers['next_save'] = Timer(self.config.save_interval,
                                          self.thread_save_timer)
@@ -48,7 +48,7 @@ class Wrapper:
                                        target=self.thread_stdin)
 
         self.threads['stdout'] = Thread(name='stdout',
-                                        target=self.saver.thread_stdout)
+                                        target=self.worker.thread_stdout)
 
         for timer in self.timers.values():
             timer.start()
@@ -73,7 +73,7 @@ class Wrapper:
         print()
 
     def thread_save_timer(self: 'Wrapper') -> None:
-        assert self.saver is not None
+        assert self.worker is not None
 
         this_save = self.timers['next_save']
         this_save.name = 'this_save'
@@ -83,14 +83,14 @@ class Wrapper:
         self.timers['next_save'].name = 'next_save'
         self.timers['next_save'].start()
 
-        if self.saver.status is not SaveStatus.IDLE:
+        if self.worker.status is not WorkerStatus.IDLE:
             info('previous save not completed; not attempting new save')
             return
 
         self.timers['cur_save'] = this_save
         self.timers['cur_save'].name = 'cur_save'
 
-        self.saver.run()
+        self.worker.backup()
 
     def thread_stderr(self: 'Wrapper') -> None:
         assert self.proc is not None
