@@ -1,14 +1,19 @@
 """
-    Gazoo wraps Minecraft bedrock server for making proper backups.
+    Wrapper for Minecraft bedrock server to make proper backups.
 """
+
+from __future__ import annotations
 
 from logging import DEBUG
 from logging import basicConfig as basic_config
-from typing import Final
+from typing import TYPE_CHECKING
 
 from gazoo.config import Config
-from gazoo.wrapper import Wrapper
 from gazoo.util import Util
+from gazoo.wrapper import Wrapper
+
+if TYPE_CHECKING:
+    from typing import Final
 
 _LOGGING_TAG: Final[str] = 'gazoo'
 

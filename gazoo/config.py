@@ -2,8 +2,13 @@
 Provides class Config
 """
 
+from __future__ import annotations
+
 from configparser import DEFAULTSECT, ConfigParser
-from typing import Final, Type # pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Final
 
 
 class Config:
@@ -25,7 +30,7 @@ class Config:
 save_interval={_DEFAULT_SAVE_INTERVAL}
 '''
     """
-    DEFAULTS_STRING is a string of default settings for the config file.
+    String of default settings for the config file
     """
 
     PREAMBLE: Final[str] = f'''[{DEFAULTSECT}]
@@ -33,7 +38,7 @@ save_interval={_DEFAULT_SAVE_INTERVAL}
 [{_SECTION_NAME}]
 '''
     """
-    PREAMBLE is a string to prepend to the string for a config file.
+    String to prepend to the string for a config file
 
     It sets defaults in the default section and adds an application-
     specific section to satisfy configparser so it doeesn't have to be
@@ -46,7 +51,7 @@ save_interval={_DEFAULT_SAVE_INTERVAL}
     @property
     def debug(self: 'Config') -> bool:
         """
-        Property debug indicates if debug mode is on.
+        Indicates if debug mode is on
         """
 
         return self._config.getboolean(self._SECTION_NAME, 'debug')
@@ -54,7 +59,7 @@ save_interval={_DEFAULT_SAVE_INTERVAL}
     @property
     def save_interval(self: 'Config') -> int:
         """
-        Property save_interval is the time between saves (in seconds).
+        The time between saves (in seconds)
         """
 
         return self._config.getint(self._SECTION_NAME, 'save_interval')

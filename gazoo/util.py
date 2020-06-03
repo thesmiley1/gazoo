@@ -1,36 +1,53 @@
 """
-Module util provides class Util.
+Provides class Util
 """
+
+from __future__ import annotations
 
 from configparser import ConfigParser
 from pathlib import Path
 from shutil import rmtree
-from typing import Final, Optional, Type # pylint: disable=unused-import
+from typing import TYPE_CHECKING
 
 from gazoo.config import Config
+
+if TYPE_CHECKING:
+    from typing import Final, Optional, Type
 
 
 class Util:
     """
-    Class Util provides misc functions for fs paths, config, setup, etc.
+    Provides misc functions for fs paths, config, setup, etc.
     """
 
+    _BACKUPS_DIR_NAME: Final[str] = 'backups'
     _BASE_DIR_NAME: Final[str] = 'gazoo'
     _CONFIG_FILE_NAME: Final[str] = 'gazoo.cfg'
-    _SAVES_DIR_NAME: Final[str] = 'saves'
     _TEMP_DIR_NAME: Final[str] = '.tmp'
     _WORLDS_DIR_NAME: Final[str] = 'worlds'
 
+    _backups_dir_path: Optional[Path] = None
     _base_dir_path: Optional[Path] = None
     _config_file_path: Optional[Path] = None
-    _saves_dir_path: Optional[Path] = None
     _temp_dir_path: Optional[Path] = None
     _worlds_dir_path: Optional[Path] = None
 
     @classmethod
-    def base_dir_path(cls: 'Type[Util]') -> Path:
+    def backups_dir_path(cls: Type[Util]) -> Path:
         """
-        Get path to the base directory for application data.
+        Get the path to the application backups directory.
+        """
+
+        if cls._backups_dir_path is None:
+            cls._backups_dir_path = cls.base_dir_path().joinpath(
+                cls._BACKUPS_DIR_NAME)
+
+        return cls._backups_dir_path
+
+    @classmethod
+    def base_dir_path(cls: Type[Util]) -> Path:
+        """
+        Get the path to the base directory for application data.
         """
 
         if cls._base_dir_path is None:
@@ -39,7 +56,7 @@ class Util:
         return cls._base_dir_path
 
     @classmethod
-    def config_file_path(cls: 'Type[Util]') -> Path:
+    def config_file_path(cls: Type[Util]) -> Path:
         """
         Get the path to the application configuration file.
         """
@@ -51,7 +68,15 @@ class Util:
         return cls._config_file_path
 
     @classmethod
-    def ensure_base_dir(cls: 'Type[Util]') -> None:
+    def ensure_backups_dir(cls: Type[Util]) -> None:
+        """
+        Ensure the application backups directory exists.
+        """
+
+        cls.backups_dir_path().mkdir(exist_ok=True)
+
+    @classmethod
+    def ensure_base_dir(cls: Type[Util]) -> None:
         """
         Ensure the base directory for application data exists.
         """
@@ -59,7 +84,7 @@ class Util:
         cls.base_dir_path().mkdir(exist_ok=True)
 
     @classmethod
-    def ensure_config_file(cls: 'Type[Util]') -> None:
+    def ensure_config_file(cls: Type[Util]) -> None:
         """
         Ensure the application configuration file exists.
 
@@ -75,18 +100,39 @@ class Util:
             config_file.write(Config.DEFAULTS_STRING)
 
     @classmethod
-    def ensure_saves_dir(cls: 'Type[Util]') -> None:
-        cls.saves_dir_path().mkdir(exist_ok=True)
+    def ensure_setup(cls: Type[Util]) -> None:
+        """
+        Ensure the filesystem is set up how it is expected to be.
 
-    @classmethod
-    def ensure_setup(cls: 'Type[Util]') -> None:
+        * base_dir
+            * Subdirectory of current working directory that houses all
+              persistent application data
+        * backups_dir
+            * Subdirectory of base_dir that houses all of the backed up
+              world saves
+        * config_file
+            * File in base_dir to store persistent application
+              configuration data
+        * temp_dir
+            * Subdirectory of base_dir that is used as ephemeral storage
+              for making temporary copies of files
+        """
+
         cls.ensure_base_dir()
+
+        cls.ensure_backups_dir()
         cls.ensure_config_file()
-        cls.ensure_saves_dir()
         cls.ensure_temp_dir()
 
     @classmethod
-    def ensure_temp_dir(cls: 'Type[Util]') -> None:
+    def ensure_temp_dir(cls: Type[Util]) -> None:
+        """
+        Ensure the application temporary directory exists and is empty.
+
+        In order to ensure the temprary directory is empty, all files
+        and folders contained within are deleted.
+        """
+
         cls.temp_dir_path().mkdir(exist_ok=True)
 
         found: Path
@@ -97,7 +143,15 @@ class Util:
                 found.unlink()
 
     @classmethod
-    def read_config(cls: 'Type[Util]') -> Config:
+    def read_config(cls: Type[Util]) -> Config:
+        """
+        Read the config file, prepend the preamble, then parse it.
+
+        The preamble that is prepended contains a defaults section with
+        default values and an application-specific section that gets the
+        values read in from the file.
+        """
+
         config_string: str = ''
 
         if cls.config_file_path().is_file():
@@ -112,15 +166,11 @@ class Util:
         return Config(config)
 
     @classmethod
-    def saves_dir_path(cls: 'Type[Util]') -> Path:
-        if cls._saves_dir_path is None:
-            cls._saves_dir_path = cls.base_dir_path().joinpath(
-                cls._SAVES_DIR_NAME)
+    def temp_dir_path(cls: Type[Util]) -> Path:
+        """
+        Get the path to the application temporary directory.
+        """
 
-        return cls._saves_dir_path
-
-    @classmethod
-    def temp_dir_path(cls: 'Type[Util]') -> Path:
         if cls._temp_dir_path is None:
             cls._temp_dir_path = cls.base_dir_path().joinpath(
                 cls._TEMP_DIR_NAME)
@@ -128,5 +178,9 @@ class Util:
         return cls._temp_dir_path
 
     @classmethod
-    def worlds_dir_path(cls: 'Type[Util]') -> Path:
+    def worlds_dir_path(cls: Type[Util]) -> Path:
+        """
+        Get the path to the server worlds directory.
+        """
+
         return Path.cwd().joinpath(cls._WORLDS_DIR_NAME)

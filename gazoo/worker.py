@@ -1,26 +1,31 @@
+from __future__ import annotations
+
+from datetime import datetime
 from logging import debug, error, info
 from pathlib import Path
 from shutil import copyfile
-from subprocess import Popen # pylint: disable=unused-import
 from time import sleep
-from typing import Final, List, Optional, Tuple
+from typing import TYPE_CHECKING
 from zipfile import ZipFile
-from datetime import datetime
 
-from gazoo.worker_status import WorkerStatus
 from gazoo.util import Util
+from gazoo.worker_status import WorkerStatus
+
+if TYPE_CHECKING:
+    from typing import Final, List, Tuple, Optional
+    from subprocess import Popen
 
 
 class Worker:
     QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be copied.'
                                 + '\n')
 
-    def __init__(self: 'Worker', proc: 'Popen[str]') -> None:
+    def __init__(self: Worker, proc: 'Popen[str]') -> None:
         self.info: List[Tuple[Path, int]] = []
         self.proc: 'Popen[str]' = proc
         self.status: WorkerStatus = WorkerStatus.IDLE
 
-    def backup(self: 'Worker') -> None:
+    def backup(self: Worker) -> None:
         if self.status is not WorkerStatus.IDLE:
             return
 
@@ -39,7 +44,7 @@ class Worker:
         self.command('save resume')
         self.status = WorkerStatus.IDLE
 
-    def command(self: 'Worker', string: str) -> None:
+    def command(self: Worker, string: str) -> None:
         assert self.proc is not None
         assert self.proc.stdin is not None
 
@@ -47,7 +52,7 @@ class Worker:
             print(string)
             self.proc.stdin.write(string + '\n')
 
-    def copy_files(self: 'Worker') -> None:
+    def copy_files(self: Worker) -> None:
         Util.ensure_temp_dir()
 
         world_dir_name: str = ''
@@ -55,10 +60,11 @@ class Worker:
         for loc, length in self.info:
             if world_dir_name == '':
                 world_dir_name = loc.parts[0]
-                world_dir_path = Util.worlds_dir_path().joinpath(world_dir_name)
+                world_dir_path = Util.worlds_dir_path().joinpath(
+                    world_dir_name)
             elif world_dir_name != loc.parts[0]:
                 error(('world_dir_name mismatch: '
-                + '{world_dir_name} {loc.parts[0]}'))
+                       + '{world_dir_name} {loc.parts[0]}'))
 
             assert world_dir_path is not None
             found: List[Path] = list(world_dir_path.glob(f'**/{loc.name}'))
@@ -106,7 +112,7 @@ class Worker:
         final_dst = Util.saves_dir_path().joinpath(zip_file_name)
         copyfile(zip_file_path, final_dst)
 
-    def thread_stdout(self: 'Worker') -> None:
+    def thread_stdout(self: Worker) -> None:
         assert self.proc is not None
         assert self.proc.stdout is not None
 
