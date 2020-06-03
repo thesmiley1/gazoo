@@ -1,109 +1,144 @@
+"""
+Provide class Wrapper.
+"""
+
+from __future__ import annotations
+
 from logging import info
 from pathlib import Path, PurePath
 from signal import SIGINT, signal
 from subprocess import PIPE, Popen
 from sys import stderr, stdin
 from threading import Thread, Timer
-from types import FrameType
-from typing import Dict, Final, Optional, Type  # pylint: disable=unused-import
+from typing import TYPE_CHECKING
 
 from gazoo.config import Config
 from gazoo.worker import Worker
 from gazoo.util import Util
 from gazoo.worker_status import WorkerStatus
 
+if TYPE_CHECKING:
+    from types import FrameType
+    from typing import Dict, Final, Optional, Type
+
 
 class Wrapper:
-    SERVER_BIN: Final[str] = 'bedrock_server'
+    """
+    Wrap bedrock server instance.
+    """
+
+    _SERVER_BIN: Final[str] = 'bedrock_server'
 
     @classmethod
-    def server_bin_path(cls: 'Type[Wrapper]') -> PurePath:
-        return Path.cwd().joinpath(cls.SERVER_BIN)
+    def server_bin_path(cls: Type[Wrapper]) -> PurePath:
+        """
+        Get the full path to the bedrock server binary.
+        """
 
-    def __init__(self: 'Wrapper', config: Config) -> None:
-        self.config = config
-        self.proc: 'Optional[Popen[str]]' = None
-        self.worker: Optional[Worker] = None
-        self.threads: Dict[str, Thread] = {}
-        self.timers: Dict[str, Timer] = {}
+        return Path.cwd().joinpath(cls._SERVER_BIN)
 
-        signal(SIGINT, self.signal_sigint)
+    def __init__(self: Wrapper, config: Config) -> None:
+        self._config = config
+        self._proc: 'Optional[Popen[str]]' = None
+        self._worker: Optional[Worker] = None
+        self._threads: Dict[str, Thread] = {}
+        self._timers: Dict[str, Timer] = {}
 
-    def run(self: 'Wrapper') -> None:
-        self.proc = Popen([self.server_bin_path()], bufsize=1,
-                          stderr=PIPE, stdin=PIPE, stdout=PIPE, text=True)
+        signal(SIGINT, self._signal_sigint)
 
-        self.worker = Worker(self.proc)
+    def run(self: Wrapper) -> None:
+        """
+        Start the bedrock server, run the wrapper.
+        """
 
-        self.timers['next_save'] = Timer(self.config.save_interval,
-                                         self.thread_save_timer)
-        self.timers['next_save'].name = 'next_save'
+        self._proc = Popen([self.server_bin_path()], bufsize=1,
+                           stderr=PIPE, stdin=PIPE, stdout=PIPE, text=True)
 
-        self.threads['setup'] = Thread(name='setup', target=Util.ensure_setup)
+        self._worker = Worker(self._proc)
 
-        self.threads['stderr'] = Thread(name='stderr',
-                                        target=self.thread_stderr)
+        self._timers['next_backup'] = Timer(self._config.save_interval,
+                                            self._thread_backup_timer)
+        self._timers['next_backup'].name = 'next_backup'
 
-        self.threads['stdin'] = Thread(daemon=True, name='stdin',
-                                       target=self.thread_stdin)
+        self._threads['setup'] = Thread(name='setup', target=Util.ensure_setup)
 
-        self.threads['stdout'] = Thread(name='stdout',
-                                        target=self.worker.thread_stdout)
+        self._threads['stderr'] = Thread(name='stderr',
+                                         target=self._thread_stderr)
 
-        for timer in self.timers.values():
+        self._threads['stdin'] = Thread(daemon=True, name='stdin',
+                                        target=self._thread_stdin)
+
+        self._threads['stdout'] = Thread(name='stdout',
+                                         target=self._worker.thread_stdout)
+
+        for timer in self._timers.values():
             timer.start()
 
-        for thread in self.threads.values():
+        for thread in self._threads.values():
             thread.start()
 
         for key in ['setup', 'stderr', 'stdout']:
-            self.threads[key].join()
+            self._threads[key].join()
 
-        self.timers['next_save'].cancel()
+        self._timers['next_save'].cancel()
 
-        if self.timers.get('cur_save') is not None:
-            self.timers['cur_save'].join()
+        if self._timers.get('cur_save') is not None:
+            self._timers['cur_save'].join()
 
-    def signal_sigint(self: 'Wrapper', signum: int, frame: FrameType) -> None:
-        # pylint: disable=unused-argument
+    def _signal_sigint(self: Wrapper, _signum: int, _frame: FrameType) -> None:
+        """
+        Handle sigint by terminating the server and printing a line.
+        """
 
-        assert self.proc is not None
+        assert self._proc is not None
 
-        self.proc.terminate()
+        self._proc.terminate()
         print()
 
-    def thread_save_timer(self: 'Wrapper') -> None:
-        assert self.worker is not None
+    def _thread_backup_timer(self: Wrapper) -> None:
+        """
+        Set the next timer, start a new backup if one is not running.
+        """
 
-        this_save = self.timers['next_save']
-        this_save.name = 'this_save'
+        assert self._worker is not None
 
-        self.timers['next_save'] = Timer(self.config.save_interval,
-                                         self.thread_save_timer)
-        self.timers['next_save'].name = 'next_save'
-        self.timers['next_save'].start()
+        this_backup = self._timers['next_backup']
+        this_backup.name = 'this_backup'
 
-        if self.worker.status is not WorkerStatus.IDLE:
+        self._timers['next_backup'] = Timer(self._config.save_interval,
+                                            self._thread_backup_timer)
+        self._timers['next_backup'].name = 'next_backup'
+        self._timers['next_backup'].start()
+
+        if self._worker.status is not WorkerStatus.IDLE:
             info('previous save not completed; not attempting new save')
             return
 
-        self.timers['cur_save'] = this_save
-        self.timers['cur_save'].name = 'cur_save'
+        self._timers['cur_backup'] = this_backup
+        self._timers['cur_backup'].name = 'cur_backup'
 
-        self.worker.backup()
+        self._worker.backup()
 
-    def thread_stderr(self: 'Wrapper') -> None:
-        assert self.proc is not None
-        assert self.proc.stderr is not None
+    def _thread_stderr(self: Wrapper) -> None:
+        """
+        Forward server stderr to system stderr.
+        """
+
+        assert self._proc is not None
+        assert self._proc.stderr is not None
 
         line: str
-        for line in self.proc.stderr:
+        for line in self._proc.stderr:
             print(line, end='', file=stderr)
 
-    def thread_stdin(self: 'Wrapper') -> None:
-        assert self.proc is not None
-        assert self.proc.stdin is not None
+    def _thread_stdin(self: Wrapper) -> None:
+        """
+        Forward system stdin to server stdin.
+        """
+
+        assert self._proc is not None
+        assert self._proc.stdin is not None
 
         line: str
         for line in stdin:
-            self.proc.stdin.write(line)
+            self._proc.stdin.write(line)

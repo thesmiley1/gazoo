@@ -1,5 +1,5 @@
 """
-Module worker_status provides class WorkerStatus.
+Provide class WorkerStatus.
 """
 
 from enum import Enum, auto
@@ -7,7 +7,7 @@ from enum import Enum, auto
 
 class WorkerStatus(Enum):
     """
-    Class WorkerStatus provides constants to track worker status.
+    Provide constants to track worker status.
 
     These roughly correspond to the server commands used for saving and
     the time in between them.  For reference, the three saving commands

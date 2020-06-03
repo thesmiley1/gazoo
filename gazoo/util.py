@@ -1,5 +1,5 @@
 """
-Provides class Util
+Provide class Util.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class Util:
     """
-    Provides misc functions for fs paths, config, setup, etc.
+    Provide misc functions for fs paths, config, setup, etc.
     """
 
     _BACKUPS_DIR_NAME: Final[str] = 'backups'

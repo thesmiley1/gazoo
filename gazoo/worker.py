@@ -1,3 +1,7 @@
+"""
+Provide class Worker.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -12,52 +16,118 @@ from gazoo.util import Util
 from gazoo.worker_status import WorkerStatus
 
 if TYPE_CHECKING:
-    from typing import Final, List, Tuple, Optional
     from subprocess import Popen
+    from typing import Final, List, Optional, Tuple
 
 
 class Worker:
-    QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be copied.'
-                                + '\n')
+    """
+    Provide a class to do the heavy lifting of the backup process.
+    """
+
+    _QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be '
+                                 + 'copied.\n')
 
     def __init__(self: Worker, proc: 'Popen[str]') -> None:
-        self.info: List[Tuple[Path, int]] = []
-        self.proc: 'Popen[str]' = proc
+        self._info: List[Tuple[Path, int]] = []
+        self._proc: 'Popen[str]' = proc
         self.status: WorkerStatus = WorkerStatus.IDLE
 
     def backup(self: Worker) -> None:
+        """
+        Make a backup of the current world.
+
+        The approach for this is:
+
+        * Send 'save hold' to server stdin.
+        * Send 'save query' to server stdin once every second.
+            * Stop when _QUERY_STRING is found from server stdout.
+        * Parse file names and lengths from server stdout.
+        * Copy files to temporary directory.
+        * Truncate files to correct length.
+        * Create zip archive in temporary directory with files copied
+          previously.
+        * Copy zip archive to backups directory.
+
+        TODO:
+
+        * Read file into memory, truncate in memory, write to zip from
+          memory?
+        * _MOVE_ zip archive to backups directory.
+        * Cleanup at end (ensure_temp_dir).
+        """
+        # FIXME ^^^ TODO ^^^
+
         if self.status is not WorkerStatus.IDLE:
             return
 
-        self.command('save hold')
+        self._command('save hold')
         self.status = WorkerStatus.QUERY
 
         while self.status is not WorkerStatus.READY:
-            self.command('save query')
+            self._command('save query')
             sleep(1)
 
-        for loc, length in self.info:
+        for loc, length in self._info:
             debug(f'{loc}: {length}')
 
-        self.copy_files()
+        self._copy_files()
 
-        self.command('save resume')
+        self._command('save resume')
         self.status = WorkerStatus.IDLE
 
-    def command(self: Worker, string: str) -> None:
-        assert self.proc is not None
-        assert self.proc.stdin is not None
+    def thread_stdout(self: Worker) -> None:
+        """
+        Forward server stdout and scan for important information.
 
-        if not self.proc.poll():
+        Lines are scanned for confirmation that files were saved
+        successfully and names/lengths of those files.
+        """
+
+        assert self._proc is not None
+        assert self._proc.stdout is not None
+
+        line: str
+        for line in self._proc.stdout:
+            print(line, end='')
+            if self.status is WorkerStatus.INFO:
+                files: List[str] = line.rstrip().split(', ')
+
+                self._info = []
+
+                for file in files:
+                    (loc, length) = file.split(':')
+                    self._info.append((Path(loc), int(length)))
+
+                self.status = WorkerStatus.READY
+
+            if (self.status is WorkerStatus.QUERY
+                    and line == self._QUERY_STRING):
+                self.status = WorkerStatus.INFO
+
+    def _command(self: Worker, string: str) -> None:
+        """
+        Echo command to stdout and send it to server stdin.
+        """
+
+        assert self._proc is not None
+        assert self._proc.stdin is not None
+
+        if not self._proc.poll():
             print(string)
-            self.proc.stdin.write(string + '\n')
+            self._proc.stdin.write(string + '\n')
 
-    def copy_files(self: Worker) -> None:
+    # FIXME:  This function is too long.
+    def _copy_files(self: Worker) -> None:
+        """
+        Copy saved files to temp dir, truncate them, and add to zip.
+        """
+
         Util.ensure_temp_dir()
 
         world_dir_name: str = ''
         world_dir_path: Optional[Path] = None
-        for loc, length in self.info:
+        for loc, length in self._info:
             if world_dir_name == '':
                 world_dir_name = loc.parts[0]
                 world_dir_path = Util.worlds_dir_path().joinpath(
@@ -76,7 +146,6 @@ class Worker:
             elif len(found) > 1:
                 error(f'Found {len(found)} files for {loc}')
 
-            # src: Path = Util.worlds_dir_path().joinpath(loc)
             src: Path = found[0]
             debug(f'src: {src}')
 
@@ -94,7 +163,6 @@ class Worker:
         datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         zip_file_name = f'{world_dir_name} {datetime_string}.zip'
 
-        # zip tmp/world
         zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
         zip_file = ZipFile(zip_file_path, 'w')
 
@@ -105,31 +173,5 @@ class Worker:
             zip_file.write(file_path, file_path.relative_to(
                 Util.temp_dir_path()))
 
-        # world_saves_dir_path = Util.saves_dir_path().joinpath(world_dir_name)
-        # world_saves_dir_path.mkdir(exist_ok=True)
-
-        # copy zip file to saves dir
-        final_dst = Util.saves_dir_path().joinpath(zip_file_name)
+        final_dst = Util.backups_dir_path().joinpath(zip_file_name)
         copyfile(zip_file_path, final_dst)
-
-    def thread_stdout(self: Worker) -> None:
-        assert self.proc is not None
-        assert self.proc.stdout is not None
-
-        line: str
-        for line in self.proc.stdout:
-            print(line, end='')
-            if self.status is WorkerStatus.INFO:
-                files: List[str] = line.rstrip().split(', ')
-
-                self.info = []
-
-                for file in files:
-                    (loc, length) = file.split(':')
-                    self.info.append((Path(loc), int(length)))
-
-                self.status = WorkerStatus.READY
-
-            if (self.status is WorkerStatus.QUERY
-                    and line == self.QUERY_STRING):
-                self.status = WorkerStatus.INFO
