@@ -141,9 +141,9 @@ class Worker:
 
             if len(found) == 0:
                 error(f'No file found for {loc}')
-
                 continue
-            elif len(found) > 1:
+
+            if len(found) > 1:
                 error(f'Found {len(found)} files for {loc}')
 
             src: Path = found[0]
