@@ -68,9 +68,6 @@ class Worker:
             self._command('save query')
             sleep(1)
 
-        for loc, length in self._info:
-            debug(f'{loc}: {length}')
-
         self._copy_files()
 
         self._command('save resume')

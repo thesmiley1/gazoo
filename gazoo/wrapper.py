@@ -25,9 +25,14 @@ if TYPE_CHECKING:
 class Wrapper:
     """
     Wrap bedrock server instance.
+
+    Threads are created for stdin, stdout, and stderr, in addition to a
+    Timer thread for performing the backup.
     """
 
     _SERVER_BIN: Final[str] = 'bedrock_server'
+
+    _server_bin_path: Optional[Path] = None
 
     @classmethod
     def server_bin_path(cls: Type[Wrapper]) -> PurePath:
@@ -35,14 +40,17 @@ class Wrapper:
         Get the full path to the bedrock server binary.
         """
 
-        return Path.cwd().joinpath(cls._SERVER_BIN)
+        if cls._server_bin_path is None:
+            _server_bin_path = Path.cwd().joinpath(cls._SERVER_BIN)
+
+        return _server_bin_path
 
     def __init__(self: Wrapper, config: Config) -> None:
         self._config = config
         self._proc: 'Optional[Popen[str]]' = None
-        self._worker: Optional[Worker] = None
         self._threads: Dict[str, Thread] = {}
         self._timers: Dict[str, Timer] = {}
+        self._worker: Optional[Worker] = None
 
         signal(SIGINT, self._signal_sigint)
 
@@ -56,7 +64,7 @@ class Wrapper:
 
         self._worker = Worker(self._proc)
 
-        self._timers['next_backup'] = Timer(self._config.save_interval,
+        self._timers['next_backup'] = Timer(self._config.backup_interval,
                                             self._thread_backup_timer)
         self._timers['next_backup'].name = 'next_backup'
 
@@ -80,10 +88,10 @@ class Wrapper:
         for key in ['setup', 'stderr', 'stdout']:
             self._threads[key].join()
 
-        self._timers['next_save'].cancel()
+        self._timers['next_backup'].cancel()
 
-        if self._timers.get('cur_save') is not None:
-            self._timers['cur_save'].join()
+        if self._timers.get('cur_backup') is not None:
+            self._timers['cur_backup'].join()
 
     def _signal_sigint(self: Wrapper, _signum: int, _frame: FrameType) -> None:
         """
@@ -105,13 +113,13 @@ class Wrapper:
         this_backup = self._timers['next_backup']
         this_backup.name = 'this_backup'
 
-        self._timers['next_backup'] = Timer(self._config.save_interval,
+        self._timers['next_backup'] = Timer(self._config.backup_interval,
                                             self._thread_backup_timer)
         self._timers['next_backup'].name = 'next_backup'
         self._timers['next_backup'].start()
 
         if self._worker.status is not WorkerStatus.IDLE:
-            info('previous save not completed; not attempting new save')
+            info('previous backup not completed; not attempting new backup')
             return
 
         self._timers['cur_backup'] = this_backup

@@ -21,13 +21,13 @@ class Config:
     config files are provided for external use.
     """
 
+    _DEFAULT_BACKUP_INTERVAL: Final[int] = 600
     _DEFAULT_DEBUG: Final[bool] = False
-    _DEFAULT_SAVE_INTERVAL: Final[int] = 600
 
     _SECTION_NAME: Final[str] = 'gazoo'
 
-    DEFAULTS_STRING: Final[str] = f'''debug={str(_DEFAULT_DEBUG).lower()}
-save_interval={_DEFAULT_SAVE_INTERVAL}
+    DEFAULTS_STRING: Final[str] = f'''backup_interval={_DEFAULT_BACKUP_INTERVAL}
+debug={str(_DEFAULT_DEBUG).lower()}
 '''
     """
     String of default settings for the config file
@@ -49,17 +49,17 @@ save_interval={_DEFAULT_SAVE_INTERVAL}
         self._config: ConfigParser = config
 
     @property
+    def backup_interval(self: 'Config') -> int:
+        """
+        The time between backups (in seconds)
+        """
+
+        return self._config.getint(self._SECTION_NAME, 'backup_interval')
+
+    @property
     def debug(self: 'Config') -> bool:
         """
         Indicates if debug mode is on
         """
 
         return self._config.getboolean(self._SECTION_NAME, 'debug')
-
-    @property
-    def save_interval(self: 'Config') -> int:
-        """
-        The time between saves (in seconds)
-        """
-
-        return self._config.getint(self._SECTION_NAME, 'save_interval')
