@@ -5,19 +5,19 @@ Provide class Worker.
 from __future__ import annotations
 
 from datetime import datetime
-from logging import debug, error, info
+from logging import error, warning
 from pathlib import Path
-from shutil import copyfile
 from time import sleep
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
+from os import rename
 
 from gazoo.util import Util
 from gazoo.worker_status import WorkerStatus
 
 if TYPE_CHECKING:
     from subprocess import Popen
-    from typing import Final, List, Optional, Tuple
+    from typing import BinaryIO, Final, List, Tuple
 
 
 class Worker:
@@ -48,17 +48,10 @@ class Worker:
         * Create zip archive in temporary directory with files copied
           previously.
         * Copy zip archive to backups directory.
-
-        TODO:
-
-        * Read file into memory, truncate in memory, write to zip from
-          memory?
-        * _MOVE_ zip archive to backups directory.
-        * Cleanup at end (ensure_temp_dir).
         """
-        # FIXME ^^^ TODO ^^^
 
         if self.status is not WorkerStatus.IDLE:
+            warning('Previous save not completed; not starting a new one')
             return
 
         self._command('save hold')
@@ -68,7 +61,7 @@ class Worker:
             self._command('save query')
             sleep(1)
 
-        self._copy_files()
+        self._archive_files()
 
         self._command('save resume')
         self.status = WorkerStatus.IDLE
@@ -87,49 +80,42 @@ class Worker:
         line: str
         for line in self._proc.stdout:
             print(line, end='')
-            if self.status is WorkerStatus.INFO:
-                files: List[str] = line.rstrip().split(', ')
 
+            if (self.status is WorkerStatus.QUERY
+                    and line == self._QUERY_STRING):
+                self.status = WorkerStatus.INFO
+            elif self.status is WorkerStatus.INFO:
                 self._info = []
 
+                files: List[str] = line.rstrip().split(', ')
                 for file in files:
                     (loc, length) = file.split(':')
                     self._info.append((Path(loc), int(length)))
 
                 self.status = WorkerStatus.READY
 
-            if (self.status is WorkerStatus.QUERY
-                    and line == self._QUERY_STRING):
-                self.status = WorkerStatus.INFO
-
-    def _command(self: Worker, string: str) -> None:
+    def _archive_files(self: Worker) -> None:
         """
-        Echo command to stdout and send it to server stdin.
-        """
-
-        assert self._proc is not None
-        assert self._proc.stdin is not None
-
-        if not self._proc.poll():
-            print(string)
-            self._proc.stdin.write(string + '\n')
-
-    # FIXME:  This function is too long.
-    def _copy_files(self: Worker) -> None:
-        """
-        Copy saved files to temp dir, truncate them, and add to zip.
+        Copy saved files to backup archive.
         """
 
         Util.ensure_temp_dir()
 
-        world_dir_name: str = ''
-        world_dir_path: Optional[Path] = None
+        first_path: Path
+        (first_path, _) = self._info[0]
+
+        world_dir_name: str = first_path.parts[0]
+        world_dir_path: Path = Util.worlds_dir_path().joinpath(
+            world_dir_name)
+
+        datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+        zip_file_name = f'{world_dir_name} {datetime_string}.zip'
+
+        zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
+        zip_file = ZipFile(zip_file_path, 'w')
+
         for loc, length in self._info:
-            if world_dir_name == '':
-                world_dir_name = loc.parts[0]
-                world_dir_path = Util.worlds_dir_path().joinpath(
-                    world_dir_name)
-            elif world_dir_name != loc.parts[0]:
+            if world_dir_name != loc.parts[0]:
                 error(('world_dir_name mismatch: '
                        + '{world_dir_name} {loc.parts[0]}'))
 
@@ -143,32 +129,26 @@ class Worker:
             if len(found) > 1:
                 error(f'Found {len(found)} files for {loc}')
 
-            src: Path = found[0]
-            debug(f'src: {src}')
+            source_file_path: Path = found[0]
 
-            dst: Path = Util.temp_dir_path().joinpath(
-                src.relative_to(Util.worlds_dir_path()))
-            debug(f'dst: {dst}')
+            source_file: BinaryIO
+            with source_file_path.open(mode='rb') as source_file:
+                zip_file.writestr(str(source_file_path.relative_to(
+                    Util.worlds_dir_path())), source_file.read(length))
 
-            info('Copying {src} to {dst}')
-            dst.parent.mkdir(exist_ok=True, parents=True)
-            copyfile(src, dst)
+        final_dest_path = Util.backups_dir_path().joinpath(zip_file_name)
+        rename(zip_file_path, final_dest_path)
 
-            with dst.open('w') as dst_file:
-                dst_file.truncate(length)
+        Util.ensure_temp_dir()
 
-        datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-        zip_file_name = f'{world_dir_name} {datetime_string}.zip'
+    def _command(self: Worker, string: str) -> None:
+        """
+        Echo command to stdout and send it to server stdin.
+        """
 
-        zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
-        zip_file = ZipFile(zip_file_path, 'w')
+        assert self._proc is not None
+        assert self._proc.stdin is not None
 
-        temp_world_dir_path = Util.temp_dir_path().joinpath(world_dir_name)
-
-        assert world_dir_path is not None
-        for file_path in temp_world_dir_path.glob('**/*'):
-            zip_file.write(file_path, file_path.relative_to(
-                Util.temp_dir_path()))
-
-        final_dst = Util.backups_dir_path().joinpath(zip_file_name)
-        copyfile(zip_file_path, final_dst)
+        if not self._proc.poll():
+            print(string)
+            self._proc.stdin.write(string + '\n')

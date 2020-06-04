@@ -1,5 +1,5 @@
 """
-    Wrapper for Minecraft bedrock server to make proper backups.
+    Wrap Minecraft bedrock server to make proper backups.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ _LOGGING_TAG: Final[str] = 'gazoo'
 
 def main() -> None:
     """
-    Function main runs the module as an application.
+    Run the module as an application.
     """
 
     config: Config = Util.read_config()
