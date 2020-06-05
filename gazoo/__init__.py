@@ -8,9 +8,9 @@ from logging import DEBUG
 from logging import basicConfig as basic_config
 from typing import TYPE_CHECKING
 
-from gazoo.config import Config
-from gazoo.util import Util
-from gazoo.wrapper import Wrapper
+from .config import Config
+from .util import Util
+from .wrapper import Wrapper
 
 if TYPE_CHECKING:
     from typing import Final

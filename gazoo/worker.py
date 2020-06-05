@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 from zipfile import ZipFile
 from os import rename
 
-from gazoo.util import Util
-from gazoo.worker_status import WorkerStatus
+from .util import Util
+from .worker_status import WorkerStatus
 
 if TYPE_CHECKING:
     from subprocess import Popen

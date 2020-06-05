@@ -12,10 +12,10 @@ from sys import stderr, stdin
 from threading import Thread, Timer
 from typing import TYPE_CHECKING
 
-from gazoo.config import Config
-from gazoo.worker import Worker
-from gazoo.util import Util
-from gazoo.worker_status import WorkerStatus
+from .config import Config
+from .worker import Worker
+from .util import Util
+from .worker_status import WorkerStatus
 
 if TYPE_CHECKING:
     from types import FrameType

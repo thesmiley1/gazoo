@@ -9,7 +9,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING
 
-from gazoo.config import Config
+from .config import Config
 
 if TYPE_CHECKING:
     from typing import Final, Optional, Type
