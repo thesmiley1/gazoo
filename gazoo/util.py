@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from .config import Config
 
 if TYPE_CHECKING:
-    from typing import Final, Optional, Type
+    from typing import Final, Type
 
 
 class Util:
@@ -26,23 +26,13 @@ class Util:
     _TEMP_DIR_NAME: Final[str] = '.tmp'
     _WORLDS_DIR_NAME: Final[str] = 'worlds'
 
-    _backups_dir_path: Optional[Path] = None
-    _base_dir_path: Optional[Path] = None
-    _config_file_path: Optional[Path] = None
-    _temp_dir_path: Optional[Path] = None
-    _worlds_dir_path: Optional[Path] = None
-
     @classmethod
     def backups_dir_path(cls: Type[Util]) -> Path:
         """
         Get the path to the application backups directory.
         """
 
-        if cls._backups_dir_path is None:
-            cls._backups_dir_path = cls.base_dir_path().joinpath(
-                cls._BACKUPS_DIR_NAME)
-
-        return cls._backups_dir_path
+        return cls.base_dir_path().joinpath(cls._BACKUPS_DIR_NAME)
 
     @classmethod
     def base_dir_path(cls: Type[Util]) -> Path:
@@ -50,10 +40,7 @@ class Util:
         Get the path to the base directory for application data.
         """
 
-        if cls._base_dir_path is None:
-            cls._base_dir_path = Path.cwd().joinpath(cls._BASE_DIR_NAME)
-
-        return cls._base_dir_path
+        return Path.cwd().joinpath(cls._BASE_DIR_NAME)
 
     @classmethod
     def config_file_path(cls: Type[Util]) -> Path:
@@ -61,17 +48,19 @@ class Util:
         Get the path to the application configuration file.
         """
 
-        if cls._config_file_path is None:
-            cls._config_file_path = cls.base_dir_path().joinpath(
-                cls._CONFIG_FILE_NAME)
-
-        return cls._config_file_path
+        return cls.base_dir_path().joinpath(cls._CONFIG_FILE_NAME)
 
     @classmethod
     def ensure_backups_dir(cls: Type[Util]) -> None:
         """
         Ensure the application backups directory exists.
+
+        Also ensure the application base directory exists (needed
+        because the application backups directory is a subdirectory of
+        the application base directory).
         """
+
+        cls.ensure_base_dir()
 
         cls.backups_dir_path().mkdir(exist_ok=True)
 
@@ -89,6 +78,10 @@ class Util:
         Ensure the application configuration file exists.
 
         If it does not, write a file with default values.
+
+        Also ensure the application base directory exists (needed
+        because the application configuration file lives in the
+        application base directory).
         """
 
         if cls.config_file_path().is_file():
@@ -130,8 +123,14 @@ class Util:
         Ensure the application temporary directory exists and is empty.
 
         In order to ensure the temprary directory is empty, all files
-        and folders contained within are deleted.
+        and folders contained within it are deleted.
+
+        Also ensure the application base directory exists (needed
+        because the application temporary directory is a subdirectory of
+        the application base directory).
         """
+
+        cls.ensure_base_dir()
 
         cls.temp_dir_path().mkdir(exist_ok=True)
 
@@ -171,11 +170,7 @@ class Util:
         Get the path to the application temporary directory.
         """
 
-        if cls._temp_dir_path is None:
-            cls._temp_dir_path = cls.base_dir_path().joinpath(
-                cls._TEMP_DIR_NAME)
-
-        return cls._temp_dir_path
+        return cls.base_dir_path().joinpath(cls._TEMP_DIR_NAME)
 
     @classmethod
     def worlds_dir_path(cls: Type[Util]) -> Path:

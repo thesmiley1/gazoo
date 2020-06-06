@@ -94,6 +94,7 @@ class Worker:
 
                 self.status = WorkerStatus.READY
 
+    # FIXME move to util and easier testing?
     def _archive_files(self: Worker) -> None:
         """
         Copy saved files to backup archive.
