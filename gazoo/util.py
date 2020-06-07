@@ -5,19 +5,25 @@ Provide class Util.
 from __future__ import annotations
 
 from configparser import ConfigParser
+from datetime import datetime
+from logging import error
+from os import rename
 from pathlib import Path
 from shutil import rmtree
 from typing import TYPE_CHECKING
+from zipfile import ZipFile
 
 from .config import Config
 
 if TYPE_CHECKING:
-    from typing import Final, Type
+    from typing import BinaryIO, Final, List, Type
+
+    from .backup_file import BackupFile
 
 
 class Util:
     """
-    Provide misc functions for fs paths, config, setup, etc.
+    Provide stateless utility functions for paths, config, setup, etc.
     """
 
     _BACKUPS_DIR_NAME: Final[str] = 'backups'
@@ -25,6 +31,44 @@ class Util:
     _CONFIG_FILE_NAME: Final[str] = 'gazoo.cfg'
     _TEMP_DIR_NAME: Final[str] = '.tmp'
     _WORLDS_DIR_NAME: Final[str] = 'worlds'
+
+    @classmethod
+    def archive_files(cls: Type[Util], backup_files: List[BackupFile]) -> None:
+        """
+        Copy saved files to backup archive.
+        """
+
+        Util.ensure_temp_dir()
+
+        world_dir_name = backup_files[0].world_dir_name
+
+        datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+        zip_file_name = f'{world_dir_name} {datetime_string}.zip'
+
+        zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
+        zip_file = ZipFile(zip_file_path, 'w')
+
+        for backup_file in backup_files:
+            if world_dir_name != backup_file.world_dir_name:
+                error(('world_dir_name mismatch: '
+                       + '{world_dir_name} {loc.parts[0]}'))
+
+            try:
+                source_file: BinaryIO
+                with backup_file.source_path.open(mode='rb') as source_file:
+                    zip_file.writestr(
+                        str(backup_file.source_path.relative_to(
+                            Util.worlds_dir_path(),
+                        )),
+                        source_file.read(backup_file.length),
+                    )
+            except FileNotFoundError as err:
+                error(err)
+
+        final_dest_path = Util.backups_dir_path().joinpath(zip_file_name)
+        rename(zip_file_path, final_dest_path)
+
+        Util.ensure_temp_dir()
 
     @classmethod
     def backups_dir_path(cls: Type[Util]) -> Path:

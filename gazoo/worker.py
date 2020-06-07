@@ -4,20 +4,17 @@ Provide class Worker.
 
 from __future__ import annotations
 
-from datetime import datetime
-from logging import error, warning
-from pathlib import Path
+from logging import warning
 from time import sleep
 from typing import TYPE_CHECKING
-from zipfile import ZipFile
-from os import rename
 
+from .backup_file import BackupFile
 from .util import Util
 from .worker_status import WorkerStatus
 
 if TYPE_CHECKING:
     from subprocess import Popen
-    from typing import BinaryIO, Final, List, Tuple
+    from typing import Final, List
 
 
 class Worker:
@@ -29,7 +26,7 @@ class Worker:
                                  + 'copied.\n')
 
     def __init__(self: Worker, proc: 'Popen[str]') -> None:
-        self._info: List[Tuple[Path, int]] = []
+        self._backup_files: List[BackupFile] = []
         self._proc: 'Popen[str]' = proc
         self.status: WorkerStatus = WorkerStatus.IDLE
 
@@ -61,7 +58,7 @@ class Worker:
             self._command('save query')
             sleep(1)
 
-        self._archive_files()
+        Util.archive_files(self._backup_files)
 
         self._command('save resume')
         self.status = WorkerStatus.IDLE
@@ -85,62 +82,14 @@ class Worker:
                     and line == self._QUERY_STRING):
                 self.status = WorkerStatus.INFO
             elif self.status is WorkerStatus.INFO:
-                self._info = []
+                self._backup_files = []
 
                 files: List[str] = line.rstrip().split(', ')
                 for file in files:
                     (loc, length) = file.split(':')
-                    self._info.append((Path(loc), int(length)))
+                    self._backup_files.append(BackupFile(loc, int(length)))
 
                 self.status = WorkerStatus.READY
-
-    # FIXME move to util and easier testing?
-    def _archive_files(self: Worker) -> None:
-        """
-        Copy saved files to backup archive.
-        """
-
-        Util.ensure_temp_dir()
-
-        first_path: Path
-        (first_path, _) = self._info[0]
-
-        world_dir_name: str = first_path.parts[0]
-        world_dir_path: Path = Util.worlds_dir_path().joinpath(
-            world_dir_name)
-
-        datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
-        zip_file_name = f'{world_dir_name} {datetime_string}.zip'
-
-        zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
-        zip_file = ZipFile(zip_file_path, 'w')
-
-        for loc, length in self._info:
-            if world_dir_name != loc.parts[0]:
-                error(('world_dir_name mismatch: '
-                       + '{world_dir_name} {loc.parts[0]}'))
-
-            assert world_dir_path is not None
-            found: List[Path] = list(world_dir_path.glob(f'**/{loc.name}'))
-
-            if len(found) == 0:
-                error(f'No file found for {loc}')
-                continue
-
-            if len(found) > 1:
-                error(f'Found {len(found)} files for {loc}')
-
-            source_file_path: Path = found[0]
-
-            source_file: BinaryIO
-            with source_file_path.open(mode='rb') as source_file:
-                zip_file.writestr(str(source_file_path.relative_to(
-                    Util.worlds_dir_path())), source_file.read(length))
-
-        final_dest_path = Util.backups_dir_path().joinpath(zip_file_name)
-        rename(zip_file_path, final_dest_path)
-
-        Util.ensure_temp_dir()
 
     def _command(self: Worker, string: str) -> None:
         """
