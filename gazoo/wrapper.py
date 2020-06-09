@@ -59,8 +59,12 @@ class Wrapper:
         Start the bedrock server, run the wrapper.
         """
 
-        self._proc = Popen([self.server_bin_path()], bufsize=1,
-                           stderr=PIPE, stdin=PIPE, stdout=PIPE, text=True)
+        self._proc = Popen([self.server_bin_path()],
+                           bufsize=1,
+                           stderr=PIPE,
+                           stdin=PIPE,
+                           stdout=PIPE,
+                           text=True)
 
         self._worker = Worker(self._proc)
 
@@ -73,7 +77,8 @@ class Wrapper:
         self._threads['stderr'] = Thread(name='stderr',
                                          target=self._thread_stderr)
 
-        self._threads['stdin'] = Thread(daemon=True, name='stdin',
+        self._threads['stdin'] = Thread(daemon=True,
+                                        name='stdin',
                                         target=self._thread_stdin)
 
         self._threads['stdout'] = Thread(name='stdout',

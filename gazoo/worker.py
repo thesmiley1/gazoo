@@ -22,8 +22,8 @@ class Worker:
     Provide a class to do the heavy lifting of the backup process.
     """
 
-    _QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be '
-                                 + 'copied.\n')
+    _QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be ' +
+                                 'copied.\n')
 
     def __init__(self: Worker, proc: 'Popen[str]') -> None:
         self._backup_files: List[BackupFile] = []

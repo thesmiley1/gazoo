@@ -50,18 +50,20 @@ class Util:
 
         for backup_file in backup_files:
             if world_dir_name != backup_file.world_dir_name:
-                error(('world_dir_name mismatch: '
-                       + '{world_dir_name} {loc.parts[0]}'))
+                error(('world_dir_name mismatch: ' +
+                       '{world_dir_name} {loc.parts[0]}'))
 
             try:
                 source_file: BinaryIO
                 with backup_file.source_path.open(mode='rb') as source_file:
+                    # yapf: disable
                     zip_file.writestr(
                         str(backup_file.source_path.relative_to(
                             Util.worlds_dir_path(),
                         )),
                         source_file.read(backup_file.length),
                     )
+                    # yapf: enable
             except FileNotFoundError as err:
                 error(err)
 

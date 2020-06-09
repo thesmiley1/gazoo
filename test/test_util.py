@@ -84,8 +84,7 @@ class TestUtil(TestCase):
         """
 
         Util.ensure_config_file()
-        self.assertTrue(Path.cwd().joinpath('gazoo',
-                                            'gazoo.cfg').is_file())
+        self.assertTrue(Path.cwd().joinpath('gazoo', 'gazoo.cfg').is_file())
 
     def test_ensure_setup(self: TestUtil) -> None:
         """
@@ -100,8 +99,7 @@ class TestUtil(TestCase):
         Util.ensure_setup()
         self.assertTrue(Path.cwd().joinpath('gazoo').is_dir())
         self.assertTrue(Path.cwd().joinpath('gazoo', 'backups').is_dir())
-        self.assertTrue(Path.cwd().joinpath('gazoo',
-                                            'gazoo.cfg').is_file())
+        self.assertTrue(Path.cwd().joinpath('gazoo', 'gazoo.cfg').is_file())
         self.assertTrue(Path.cwd().joinpath('gazoo', '.tmp').is_dir())
 
     def test_ensure_temp_dir(self: TestUtil) -> None:
@@ -114,8 +112,7 @@ class TestUtil(TestCase):
         Util.ensure_temp_dir()
         self.assertTrue(Util.temp_dir_path().is_dir())
 
-        temp_file = NamedTemporaryFile(delete=False,
-                                       dir=Util.temp_dir_path())
+        temp_file = NamedTemporaryFile(delete=False, dir=Util.temp_dir_path())
         temp_file.close()
 
         temp_file_path = Path(temp_file.name)
@@ -151,8 +148,8 @@ class TestUtil(TestCase):
         Expect `$PWD/gazoo/.tmp`.
         """
 
-        self.assertEqual(Util.temp_dir_path(), Path.cwd().joinpath('gazoo',
-                                                                   '.tmp'))
+        self.assertEqual(Util.temp_dir_path(),
+                         Path.cwd().joinpath('gazoo', '.tmp'))
 
     def test_worlds_dir_path(self: TestUtil) -> None:
         """
