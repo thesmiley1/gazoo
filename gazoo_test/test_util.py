@@ -4,28 +4,18 @@ Test module `gazoo.util`.
 
 from __future__ import annotations
 
-from os import chdir
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
-from unittest import TestCase, main
+from tempfile import NamedTemporaryFile
+from unittest import main
 
 from gazoo.util import Util
+from gazoo_test.helpers.temp_cwd_test_case import TempCwdTestCase
 
 
-class TestUtil(TestCase):
+class TestUtil(TempCwdTestCase):
     """
     Test class `Util`.
     """
-
-    def setUp(self: TestUtil) -> None:
-        self._orig_cwd = Path.cwd()
-        self._temp_cwd = TemporaryDirectory()
-
-        chdir(self._temp_cwd.name)
-
-    def tearDown(self: TestUtil) -> None:
-        chdir(self._orig_cwd)
-        self._temp_cwd.cleanup()
 
     def test_backups_dir_path(self: TestUtil) -> None:
         """
