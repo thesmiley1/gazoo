@@ -1,4 +1,5 @@
 /.mypy_cache/
+/dist/
 /gazoo.egg-info/
 
 __pycache__/

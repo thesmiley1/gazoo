@@ -10,7 +10,8 @@ from unittest import main
 
 from gazoo.backup_file import BackupFile
 from gazoo.util import Util
-from gazoo_test.helpers.temp_cwd_test_case import TempCwdTestCase
+
+from .helpers.temp_cwd_test_case import TempCwdTestCase
 
 if TYPE_CHECKING:
     from typing import Optional

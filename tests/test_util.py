@@ -9,7 +9,8 @@ from tempfile import NamedTemporaryFile
 from unittest import main
 
 from gazoo.util import Util
-from gazoo_test.helpers.temp_cwd_test_case import TempCwdTestCase
+
+from .helpers.temp_cwd_test_case import TempCwdTestCase
 
 
 class TestUtil(TempCwdTestCase):
