@@ -21,13 +21,15 @@ class Config:
     configuration files are provided for external use.
     """
 
-    _DEFAULT_BACKUP_INTERVAL: Final[int] = 600
+    _DEFAULT_BACKUP_INTERVAL: Final[int] = 10 * 60 # 10 minutes
+    _DEFAULT_CLEANUP_INTERVAL: Final[int] = 24 * 60 * 60 # 24 hours
     _DEFAULT_DEBUG: Final[bool] = False
 
     _SECTION_NAME: Final[str] = 'gazoo'
 
     DEFAULTS_STRING: Final[str] = (
         f'''backup_interval={_DEFAULT_BACKUP_INTERVAL}
+cleanup_interval={_DEFAULT_CLEANUP_INTERVAL}
 debug={str(_DEFAULT_DEBUG).lower()}
 ''')
     """
@@ -56,6 +58,14 @@ debug={str(_DEFAULT_DEBUG).lower()}
         """
 
         return self._config.getint(self._SECTION_NAME, 'backup_interval')
+
+    @property
+    def cleanup_interval(self: 'Config') -> int:
+        """
+        Time between cleanups (in seconds)
+        """
+
+        return self._config.getint(self._SECTION_NAME, 'cleanup_interval')
 
     @property
     def debug(self: 'Config') -> bool:

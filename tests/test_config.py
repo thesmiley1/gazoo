@@ -30,6 +30,15 @@ class TestConfig(TestCase):
 
         self.assertEqual(self.config.backup_interval, 600)
 
+    def test_cleanup_interval(self: TestConfig) -> None:
+        """
+        Test `Config.cleanup_interval`.
+
+        Expect int of default value.
+        """
+
+        self.assertEqual(self.config.cleanup_interval, 86400)
+
     def test_debug(self: TestConfig) -> None:
         """
         Test `Config.debug`.

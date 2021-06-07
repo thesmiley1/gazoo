@@ -1,5 +1,5 @@
 """
-Provide class Worker.
+Provide class BackupWorker.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from typing import Final, List
 
 
-class Worker:
+class BackupWorker:
     """
     Provide a class to do the heavy lifting of the backup process.
     """
@@ -25,12 +25,12 @@ class Worker:
     _QUERY_STRING: Final[str] = ('Data saved. Files are now ready to be ' +
                                  'copied.\n')
 
-    def __init__(self: Worker, proc: 'Popen[str]') -> None:
+    def __init__(self: BackupWorker, proc: 'Popen[str]') -> None:
         self._backup_files: List[BackupFile] = []
         self._proc: 'Popen[str]' = proc
         self.status: WorkerStatus = WorkerStatus.IDLE
 
-    def backup(self: Worker) -> None:
+    def backup(self: BackupWorker) -> None:
         """
         Make a backup of the current world.
 
@@ -58,12 +58,28 @@ class Worker:
             self._command('save query')
             sleep(1)
 
+        self.status = WorkerStatus.WORKING
         Util.archive_files(self._backup_files)
 
         self._command('save resume')
         self.status = WorkerStatus.IDLE
 
-    def thread_stdout(self: Worker) -> None:
+    def cleanup(self: BackupWorker) -> None:
+        """
+        Clean up the backup directory.
+        """
+
+        if self.status is not WorkerStatus.IDLE:
+            warning('Previous cleanup not completed; not starting a new one')
+            return
+
+        self.status = WorkerStatus.WORKING
+
+        Util.cleanup_archives()
+
+        self.status = WorkerStatus.IDLE
+
+    def thread_stdout(self: BackupWorker) -> None:
         """
         Forward server stdout and scan for important information.
 
@@ -91,7 +107,7 @@ class Worker:
 
                 self.status = WorkerStatus.READY
 
-    def _command(self: Worker, string: str) -> None:
+    def _command(self: BackupWorker, string: str) -> None:
         """
         Echo command to stdout and send it to server stdin.
         """

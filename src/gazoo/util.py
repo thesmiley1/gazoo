@@ -7,8 +7,9 @@ from __future__ import annotations
 from configparser import ConfigParser
 from datetime import datetime
 from logging import error
-from os import rename
+from os import remove, rename, scandir
 from pathlib import Path
+from re import compile as compyle
 from shutil import rmtree
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
@@ -16,7 +17,7 @@ from zipfile import ZipFile
 from .config import Config
 
 if TYPE_CHECKING:
-    from typing import BinaryIO, Final, List, Type
+    from typing import BinaryIO, Dict, Final, List, Type
 
     from .backup_file import BackupFile
 
@@ -87,6 +88,30 @@ class Util:
         """
 
         return Path.cwd().joinpath(cls._BASE_DIR_NAME)
+
+    @classmethod
+    def cleanup_archives(cls: Type[Util]) -> None:
+        """
+        Clean up the archives created during backup.
+        """
+
+        with scandir(Util.backups_dir_path()) as itr:
+            keep: Dict[str, str] = {}
+            pattern = compyle(r'(?P<date>\d{4}-\d{2}-\d{2}) \d{2}-\d{2}-\d{2}\.zip$')
+
+            files = sorted(itr, key=lambda f : f.name)
+            for file in files:
+                match = pattern.search(file.name)
+                assert match is not None
+
+                keep[match.group('date')] = file.path
+
+            for file in files:
+                match = pattern.search(file.name)
+                assert match is not None
+
+                if keep[match.group('date')] != file.path:
+                    remove(file.path)
 
     @classmethod
     def config_file_path(cls: Type[Util]) -> Path:
