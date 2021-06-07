@@ -64,21 +64,6 @@ class BackupWorker:
         self._command('save resume')
         self.status = WorkerStatus.IDLE
 
-    def cleanup(self: BackupWorker) -> None:
-        """
-        Clean up the backup directory.
-        """
-
-        if self.status is not WorkerStatus.IDLE:
-            warning('Previous cleanup not completed; not starting a new one')
-            return
-
-        self.status = WorkerStatus.WORKING
-
-        Util.cleanup_archives()
-
-        self.status = WorkerStatus.IDLE
-
     def thread_stdout(self: BackupWorker) -> None:
         """
         Forward server stdout and scan for important information.
