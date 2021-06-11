@@ -11,6 +11,7 @@ python = "^3.8"
 yapf = "^0.30.0"
 flake8 = "^3.8.3"
 pytest = "^5.4.3"
+pylint = "^2.8.3"
 
 [tool.poetry.scripts]
 gazoo = 'gazoo:main'
