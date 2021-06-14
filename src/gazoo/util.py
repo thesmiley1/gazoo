@@ -6,11 +6,11 @@ from __future__ import annotations
 
 from configparser import ConfigParser
 from datetime import datetime
-from logging import error
+from logging import error, info
 from os import remove, rename, scandir
 from pathlib import Path
 from re import compile as compyle
-from shutil import rmtree
+from shutil import copyfileobj, rmtree
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
@@ -234,6 +234,24 @@ class Util:
         config.read_string(config_string)
 
         return Config(config)
+
+    @classmethod
+    def restore_backup(cls: Type[Util]) -> None:
+        """
+        Restore world backup.
+        """
+
+        with scandir(Util.backups_dir_path()) as itr:
+            files = sorted(itr, key=lambda f: f.stat().st_mtime)
+            latest = files[len(files) - 1]
+
+            zip_file = ZipFile(latest.path)
+            for name in zip_file.namelist():
+                src = zip_file.open(name)
+                dst = open(cls.worlds_dir_path().joinpath(name), mode='wb')
+                copyfileobj(src, dst)
+
+            info(f'Restored "{latest.name}"')
 
     @classmethod
     def temp_dir_path(cls: Type[Util]) -> Path:

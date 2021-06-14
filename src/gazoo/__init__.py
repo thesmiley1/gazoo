@@ -3,9 +3,9 @@
 """
 
 from __future__ import annotations
-
-from logging import DEBUG
+from logging import DEBUG, error
 from logging import basicConfig as basic_config
+from sys import argv
 from typing import TYPE_CHECKING
 
 from .config import Config
@@ -31,7 +31,13 @@ def main() -> None:
         level=(DEBUG if config.debug else None),
     )
 
-    Wrapper(config).run()
+    if len(argv) > 1:
+        if argv[1] == 'restore':
+            Util.restore_backup()
+        else:
+            error(f'Unrecognized command "{argv[1]}"')
+    else:
+        Wrapper(config).run()
 
 
 if __name__ == '__main__':
