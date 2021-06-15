@@ -3,6 +3,7 @@
 """
 
 from __future__ import annotations
+
 from logging import DEBUG, error
 from logging import basicConfig as basic_config
 from sys import argv
