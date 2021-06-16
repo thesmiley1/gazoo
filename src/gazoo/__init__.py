@@ -38,6 +38,9 @@ def main() -> None:
 
     subparsers = parser.add_subparsers()
 
+    cleanup_parser = subparsers.add_parser('cleanup')
+    cleanup_parser.set_defaults(func=_cleanup)
+
     restore_parser = subparsers.add_parser('restore')
     restore_parser.set_defaults(func=_restore)
     restore_parser.add_argument(
@@ -50,6 +53,10 @@ def main() -> None:
 
     args = parser.parse_args()
     args.func(args)
+
+
+def _cleanup(_args: Namespace) -> None:
+    Util.cleanup_archives()
 
 
 def _restore(args: Namespace) -> None:
