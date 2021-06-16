@@ -8,6 +8,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from logging import error, info
 from os import remove, rename, scandir
+from os.path import basename, exists, isabs
 from pathlib import Path
 from re import compile as compyle
 from shutil import copyfileobj, rmtree
@@ -17,6 +18,7 @@ from zipfile import ZipFile
 from .config import Config
 
 if TYPE_CHECKING:
+    from os import PathLike
     from typing import BinaryIO, Dict, Final, List, Type
 
     from .backup_file import BackupFile
@@ -236,22 +238,40 @@ class Util:
         return Config(config)
 
     @classmethod
-    def restore_backup(cls: Type[Util]) -> None:
+    def restore_backup(cls: Type[Util], num_or_path: str) -> None:
         """
         Restore world backup.
         """
 
-        with scandir(Util.backups_dir_path()) as itr:
-            files = sorted(itr, key=lambda f: f.stat().st_mtime)
-            latest = files[len(files) - 1]
+        num: int
+        is_num = True
+        try:
+            num = int(num_or_path)
+        except ValueError:
+            is_num = False
 
-            zip_file = ZipFile(latest.path)
-            for name in zip_file.namelist():
-                src = zip_file.open(name)
-                dst = open(cls.worlds_dir_path().joinpath(name), mode='wb')
-                copyfileobj(src, dst)
+        path: PathLike
+        if is_num:
+            with scandir(Util.backups_dir_path()) as itr:
+                files = sorted(itr, key=lambda f: f.stat().st_mtime)
 
-            info(f'Restored "{latest.name}"')
+                if num < 1 or num > len(files):
+                    num = 1
+                selected = files[len(files) - num]
+                path = selected.path
+        else:
+            if isabs(num_or_path):
+                path = num_or_path
+            else:
+                path = cls.backups_dir_path().joinpath(num_or_path)
+
+        zip_file = ZipFile(path)
+        for name in zip_file.namelist():
+            src = zip_file.open(name)
+            dst = open(cls.worlds_dir_path().joinpath(name), mode='wb')
+            copyfileobj(src, dst)
+
+        info(f'Restored "{basename(path)}"')
 
     @classmethod
     def temp_dir_path(cls: Type[Util]) -> Path:
