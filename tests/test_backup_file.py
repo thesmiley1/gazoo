@@ -48,7 +48,7 @@ class TestBackupFile(TempCwdTestCase):
 
         backup_file = BackupFile(str(Path('world').joinpath('foo.bar')), 22)
 
-        file_not_found_error: FileNotFoundError
+        file_not_found_error = FileNotFoundError()
         try:
             backup_file.source_path
         except FileNotFoundError as err:
