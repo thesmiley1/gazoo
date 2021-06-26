@@ -42,9 +42,9 @@ class Wrapper:
         """
 
         if cls._server_bin_path is None:
-            _server_bin_path = Path.cwd().joinpath(cls._SERVER_BIN)
+            cls._server_bin_path = Path.cwd().joinpath(cls._SERVER_BIN)
 
-        return _server_bin_path
+        return cls._server_bin_path
 
     def __init__(self: Wrapper, config: Config) -> None:
         self._config = config
