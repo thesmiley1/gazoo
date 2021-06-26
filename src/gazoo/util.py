@@ -243,7 +243,7 @@ class Util:
         Restore world backup.
         """
 
-        num: int
+        num = 0
         is_num = True
         try:
             num = int(num_or_path)
