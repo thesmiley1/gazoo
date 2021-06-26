@@ -250,7 +250,7 @@ class Util:
         except ValueError:
             is_num = False
 
-        path: PathLike
+        path: PathLike[str]
         if is_num:
             with scandir(Util.backups_dir_path()) as itr:
                 files = sorted(itr, key=lambda f: f.stat().st_mtime)
@@ -258,10 +258,10 @@ class Util:
                 if num < 1 or num > len(files):
                     num = 1
                 selected = files[len(files) - num]
-                path = selected.path
+                path = Path(selected.path)
         else:
             if isabs(num_or_path):
-                path = num_or_path
+                path = Path(num_or_path)
             else:
                 path = cls.backups_dir_path().joinpath(num_or_path)
 
