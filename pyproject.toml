@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gazoo"
-version = "0.0.0"
+version = "0.0.0.beta0"
 description = "Wrap Minecraft bedrock server to make proper backups."
 authors = ["John Schroeder <john@schroedernet.software>"]
 
@@ -13,6 +13,7 @@ flake8 = "^3.8.3"
 pytest = "^5.4.3"
 pylint = "^2.8.3"
 mypy = "^0.910"
+twine = "^3.4.1"
 
 [tool.poetry.scripts]
 gazoo = 'gazoo:main'

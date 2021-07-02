@@ -1,5 +1,6 @@
 /.mypy_cache/
 /dist/
 /gazoo.egg-info/
+/node_modules/
 
 __pycache__/
