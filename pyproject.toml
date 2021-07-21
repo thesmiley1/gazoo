@@ -13,7 +13,7 @@ flake8 = "^3.8.3"
 pytest = "^5.4.3"
 pylint = "^2.8.3"
 mypy = "^0.910"
-twine = "^3.4.1"
+twine = "^3.4.2"
 
 [tool.poetry.scripts]
 gazoo = 'gazoo:main'
