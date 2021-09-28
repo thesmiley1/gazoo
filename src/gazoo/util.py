@@ -8,7 +8,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from logging import error, info
 from os import remove, rename, scandir
-from os.path import basename, exists, isabs
+from os.path import basename, dirname, exists, isabs
 from pathlib import Path
 from re import compile as compyle
 from shutil import copyfileobj, rmtree
@@ -266,8 +266,35 @@ class Util:
                 path = cls.backups_dir_path().joinpath(num_or_path)
 
         zip_file = ZipFile(path)
-        for name in zip_file.namelist():
+        name_list = zip_file.namelist()
+
+        # loop over file names from zip file
+        world_name = ''
+        for name in name_list:
+            my_world_name = name
+            my_dirname = dirname(my_world_name)
+            prev_dirname = my_dirname
+
+            # loop over dirnames of this file to find the topmost
+            while my_dirname != '':
+                prev_dirname = my_dirname
+                my_dirname = dirname(my_dirname)
+
+            if world_name == '':
+                # first iteration; use whatever was found
+                world_name = prev_dirname
+            elif world_name != prev_dirname:
+                # subsequent iteration; check agreement
+                error(f'world_name mismatch: {world_name} != {prev_dirname}')
+
+        world_path = cls.worlds_dir_path().joinpath(world_name)
+        if world_path.exists():
+            rmtree(world_path)
+
+        for name in name_list:
             src = zip_file.open(name)
+            file_dir = dirname(cls.worlds_dir_path().joinpath(name))
+            Path(file_dir).mkdir(parents=True, exist_ok=True)
             dst = open(cls.worlds_dir_path().joinpath(name), mode='wb')
             copyfileobj(src, dst)
 
