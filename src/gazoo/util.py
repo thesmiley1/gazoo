@@ -41,14 +41,14 @@ class Util:
         Copy saved files to backup archive.
         """
 
-        Util.ensure_temp_dir()
+        cls.ensure_temp_dir()
 
         world_dir_name = backup_files[0].world_dir_name
 
         datetime_string = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         zip_file_name = f'{world_dir_name} {datetime_string}.zip'
 
-        zip_file_path = Util.temp_dir_path().joinpath(zip_file_name)
+        zip_file_path = cls.temp_dir_path().joinpath(zip_file_name)
         zip_file = ZipFile(zip_file_path, 'w')
 
         for backup_file in backup_files:
@@ -62,7 +62,7 @@ class Util:
                     # yapf: disable
                     zip_file.writestr(
                         str(backup_file.source_path.relative_to(
-                            Util.worlds_dir_path(),
+                            cls.worlds_dir_path(),
                         )),
                         source_file.read(backup_file.length),
                     )
@@ -70,10 +70,10 @@ class Util:
             except FileNotFoundError as err:
                 error(err)
 
-        final_dest_path = Util.backups_dir_path().joinpath(zip_file_name)
+        final_dest_path = cls.backups_dir_path().joinpath(zip_file_name)
         rename(zip_file_path, final_dest_path)
 
-        Util.ensure_temp_dir()
+        cls.ensure_temp_dir()
 
     @classmethod
     def backups_dir_path(cls: Type[Util]) -> Path:
@@ -97,7 +97,7 @@ class Util:
         Clean up the archives created during backup.
         """
 
-        with scandir(Util.backups_dir_path()) as itr:
+        with scandir(cls.backups_dir_path()) as itr:
             keep: Dict[str, str] = {}
             pattern = compyle(r'(?P<date>\d{4}-\d{2}-\d{2}) \d{2}-\d{2}-\d{2}\.zip$')
 
@@ -252,7 +252,7 @@ class Util:
 
         path: PathLike[str]
         if is_num:
-            with scandir(Util.backups_dir_path()) as itr:
+            with scandir(cls.backups_dir_path()) as itr:
                 files = sorted(itr, key=lambda f: f.stat().st_mtime)
 
                 if num < 1 or num > len(files):
