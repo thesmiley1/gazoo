@@ -3,6 +3,11 @@ name = "gazoo"
 version = "0.0.1"
 description = "Wrap Minecraft bedrock server to make proper backups."
 authors = ["John Schroeder <john@schroedernet.software>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://gitlab.com/thesmiley1/gazoo"
+repository = "https://gitlab.com/thesmiley1/gazoo.git"
+keywords = ["minecraft", "bedrock"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
