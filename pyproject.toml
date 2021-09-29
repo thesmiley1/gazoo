@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gazoo"
-version = "0.0.0.beta0"
+version = "0.0.1"
 description = "Wrap Minecraft bedrock server to make proper backups."
 authors = ["John Schroeder <john@schroedernet.software>"]
 
